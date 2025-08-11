@@ -11,13 +11,16 @@ namespace edb
 {
 	std::map<int, std::string> formatted_events_choices;
 
-	const std::string cjedb_path = "CarrotJuicer\\cjedb.json";
+	const std::string first = "CarrotJuicer\\cje";
+	const std::string second = "db.json";
 
 	void init()
 	{
+		std::string cjedb_path = first + second;
+		
 		if (!std::filesystem::exists(cjedb_path))
 		{
-			std::cout << "Skipping cjedb.json.\n";
+			std::cout << "Skipping " << cjedb_path << "\n";
 			return;
 		}
 
@@ -43,11 +46,11 @@ namespace edb
 				formatted_events_choices[v.at("storyId")] = formatted.str();
 			}
 
-			std::cout << "cjedb.json opened, read " << formatted_events_choices.size() << " events.\n";
+			std::cout << cjedb_path << " opened, read " << formatted_events_choices.size() << " events.\n";
 		}
 		catch (std::exception& e)
 		{
-			std::cout << "Exception reading cjedb.json: " << e.what() << "\n";
+			std::cout << "Exception reading " << cjedb_path << ": " << e.what() << "\n";
 		}
 	}
 

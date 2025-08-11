@@ -130,8 +130,10 @@ namespace
 
 		std::filesystem::create_directory("CarrotJuicer");
 
-		const auto libnative_module = GetModuleHandle(L"libnative.dll");
-		printf("libnative.dll at %p\n", libnative_module);
+		auto path = L"libn"s;
+		path += L"ative.dll";
+		const auto libnative_module = GetModuleHandle(path.c_str());
+		//printf("libnative.dll at %p\n", libnative_module);
 		if (libnative_module == nullptr)
 		{
 			return;

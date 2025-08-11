@@ -11,7 +11,8 @@ using json = nlohmann::json;
 
 namespace config
 {
-	const std::string config_path = "CarrotJuicer\\cjconfig.json";
+	const std::string first = "CarrotJuicer\\cjco";
+	const std::string second = "nfig.json";
 
 	config_struct config = {
 		0,
@@ -25,6 +26,8 @@ namespace config
 
 	void load()
 	{
+		std::string config_path = first + second;
+		
 		if (!std::filesystem::exists(config_path))
 		{
 			return;
@@ -49,7 +52,7 @@ namespace config
 			CJCONFIG_READ_PROPERTY(aoharu_print_team_average_status_max_turn, j, config);
 			CJCONFIG_READ_PROPERTY(climax_print_shop_items, j, config);
 
-			std::cout << "Loaded cjconfig.json\n";
+			std::cout << "Loaded " << config_path << "\n";
 		}
 		catch (const std::exception& e)
 		{

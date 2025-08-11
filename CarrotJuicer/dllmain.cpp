@@ -17,7 +17,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	WCHAR buffer[MAX_PATH];
 	const std::filesystem::path module_path(std::wstring(buffer, GetModuleFileName(nullptr, buffer, MAX_PATH)));
 
-	if (module_path.filename() == L"umamusume.exe")
+	if (module_path.filename() == L"umamusume.exe" || module_path.filename() == L"UmamusumePrettyDerby_Jpn.exe")
 	{
 		current_path(module_path.parent_path());
 
