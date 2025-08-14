@@ -2,11 +2,15 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "carrotjuicer",
   "version": "1.0.0",
+  "builtin-baseline": "d30fdf55cfca16e12bc3ad99cbc615997014b61b",
   "dependencies": [
     "cpp-httplib",
+    "curl",
+    "discord-rpc",
+    "fmt",
     "minhook",
     "nlohmann-json",
+    "openssl",
     "sqlitecpp"
-  ],
-  "builtin-baseline": "d30fdf55cfca16e12bc3ad99cbc615997014b61b"
+  ]
 }

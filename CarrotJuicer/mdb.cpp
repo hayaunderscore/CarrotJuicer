@@ -2,11 +2,13 @@
 #include <iostream>
 #include <unordered_map>
 #include <vector>
+#include <tuple>
 #include <Windows.h>
 #include <SQLiteCpp/SQLiteCpp.h>
 
 #include "config.hpp"
 
+bool is_steam = false;
 
 namespace mdb
 {
@@ -44,7 +46,10 @@ namespace mdb
 			const int len = GetEnvironmentVariable(L"USERPROFILE", buffer, MAX_PATH);
 
 			std::wstring path(buffer, len);
-			path += L"\\AppData\\LocalLow\\Cygames\\umamusume\\master\\master.mdb";
+			if (is_steam)
+				path += L"\\AppData\\LocalLow\\Cygames\\UmamusumePrettyDerby_Jpn\\master\\master.mdb";
+			else
+				path += L"\\AppData\\LocalLow\\Cygames\\umamusume\\master\\master.mdb";
 			master = new SQLite::Database(utf8_encode(path), SQLite::OPEN_READONLY);
 
 			std::cout << "master.mdb opened.\n";
@@ -96,6 +101,33 @@ namespace mdb
 			std::cout << "Exception querying master.mdb: " << e.what() << "\n";
 		}
 		return "";
+	}
+	
+	std::vector<std::tuple<int, const char*, int>> find_query(const char* query_str)
+	{
+		std::vector<std::tuple<int, const char*, int>> results;
+		if (master == nullptr)
+		{
+			return results;
+		}
+
+		try
+		{
+			SQLite::Statement query(*master, query_str);
+
+			while (query.executeStep())
+			{
+				// going out of bounds sometimes so just. dont. for now
+				results.push_back(std::make_tuple(query.getColumn(0), "", 0));
+			}
+			
+			return results;
+		}
+		catch (std::exception& e)
+		{
+			std::cout << "Exception querying master.mdb: " << e.what() << "\n";
+		}
+		return results;
 	}
 
 
