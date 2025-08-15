@@ -383,7 +383,10 @@ namespace discord
 				}
 				// Run has ended
 				if (data.contains("single_mode_factor_select_common"))
+				{
+					in_training = false;
 					should_update = true;
+				}
 				// Inside a training run
 				if (data.contains("chara_info"))
 				{
@@ -422,6 +425,7 @@ namespace discord
 						//std::cout << discordPresence.state << "\n";
 					}
 					should_update = true;
+					in_training = true;
 				}
 				/*
 				else if (data.contains("unchecked_event_array"))
@@ -469,6 +473,56 @@ namespace discord
 				{
 					Discord_UpdatePresence(&discordPresence);
 				}
+			}
+			catch (const json::out_of_range& e)
+			{
+				std::cout << "json: out_of_range: " << e.what() << "\n";
+			}
+			catch (const json::type_error& e)
+			{
+				std::cout << "json: type_error: " << e.what() << "\n";
+			}
+		}
+		catch (...)
+		{
+			std::cout << "Uncaught exception!\n";
+		}
+	}
+	
+	void update_presence_by_data_request(const std::string& data)
+	{
+		try
+		{
+			const uint32_t offset = *(uint32_t*)data.c_str();
+			if (offset != 166)
+			{
+				std::cout << "Unknown offset detected: " << offset << "!\n";
+			}
+
+			const auto v = std::string_view(data);
+			for (int i = 0; i < header_regions.size() - 1; i++)
+			{
+				hex_print(v.substr(header_regions[i], header_regions[i + 1] - header_regions[i]));
+				std::cout << "\n";
+			}
+			hex_print(v.substr(header_regions[header_regions.size() - 1],
+			                   4 + offset - header_regions[header_regions.size() - 1]));
+			std::cout << "\n";
+
+			json j;
+			try
+			{
+				j = json::from_msgpack(v.substr(4 + offset));
+			}
+			catch (const json::parse_error& e)
+			{
+				std::cout << "json: parse_error: " << e.what() << "\n";
+				return;
+			}
+
+			try
+			{
+				if 
 			}
 			catch (const json::out_of_range& e)
 			{
@@ -533,7 +587,7 @@ namespace discord
 			RECT rc;
 			printf("Checking Uma window...\n");
 			game_window = find_game_window(is_steam ? "UmamusumePrettyDerby_Jpn" : "umamusume");
-			if (game_window && !(IsIconic(game_window)))
+			if (game_window && !(IsIconic(game_window)) /*&& !in_training*/)
 			{
 				HDC hdcWindow = GetDC(game_window);
 				

@@ -95,7 +95,8 @@ namespace
 		});
 
 		responses::print_response_additional_info(data);
-		discord::update_presence_by_data(data);
+		if (config::get().discord_rpc)
+			discord::update_presence_by_data(data);
 
 		notifier_thread.join();
 
@@ -201,7 +202,8 @@ void attach()
 	printf("MinHook initialized.\n");
 
 	config::load();
-	discord::init();
+	if (config::get().discord_rpc)
+		discord::init();
 
 	std::thread(edb::init).detach();
 	std::thread(notifier::init).detach();
@@ -224,5 +226,6 @@ void detach()
 {
 	MH_DisableHook(MH_ALL_HOOKS);
 	MH_Uninitialize();
-	discord::deinit();
+	if (config::get().discord_rpc)
+		discord::deinit();
 }

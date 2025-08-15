@@ -23,6 +23,8 @@ namespace config
 		int aoharu_print_team_average_status_max_turn;
 
 		bool climax_print_shop_items;
+		
+		bool discord_rpc;
 	};
 
 	void load();
