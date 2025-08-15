@@ -489,6 +489,7 @@ namespace discord
 		}
 	}
 	
+	/*
 	void update_presence_by_data_request(const std::string& data)
 	{
 		try
@@ -538,6 +539,7 @@ namespace discord
 			std::cout << "Uncaught exception!\n";
 		}
 	}
+	*/
 	
 	bool similar_color(PresenceColor color, PresenceColor color2)
 	{
