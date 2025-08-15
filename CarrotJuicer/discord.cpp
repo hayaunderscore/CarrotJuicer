@@ -14,6 +14,11 @@
 #include <algorithm> 
 #include <cctype>
 #include <locale>
+#include <atomic>
+#include <thread>
+#include <chrono>
+#include <cmath>
+#include <tuple>
 
 #include "config.hpp"
 #include "mdb.hpp"
@@ -22,6 +27,9 @@
 
 using namespace std::literals;
 using json = nlohmann::json;
+
+extern bool is_steam;
+extern HWND uma_window;
 
 namespace discord
 {
@@ -34,8 +42,28 @@ namespace discord
 	static void HandleDiscordSpectate(const char* secret) { }
 	static void HandleDiscordJoinRequest(const DiscordUser* request) { }
 	
+	typedef struct PresenceColor {
+		int r, g, b;
+	} PresenceColor;
+	
+	typedef struct PresenceScreen {
+		double x = 0;
+		double y = 0;
+		PresenceColor color{};
+	} PresenceScreen;
+	
+	PresenceScreen make_PresenceScreen(double x, double y, int r, int g, int b)
+	{
+		PresenceScreen vec;
+		vec.x = x;
+		vec.y = y;
+		vec.color.r = r; vec.color.g = g; vec.color.b = b;
+		return vec;
+	}
+	
 	static int64_t start;
 	bool in_training = false;
+	bool running = false;
 	
 	// handle names for characters and races
 	// TODO: Handle these via master.mdb over using umapyoi.net
@@ -64,6 +92,8 @@ namespace discord
 		{10, "The Twinkle Legends"},
 		{11, "Design Your Island"}
 	};
+	
+	std::unordered_map<std::string, PresenceScreen> screen_presence = {};
 	
 	// default curl callback
 	std::size_t callback(
@@ -146,6 +176,18 @@ namespace discord
 		get_outfit_dict();
 		get_race_dict();
 		
+		running = true;
+		
+		std::thread th(get_main_menu_screenshot);
+		th.detach();
+		
+		// these are designed for steam... will make one for dmm later
+		screen_presence.insert({"Upgrade", make_PresenceScreen(0.1859, 0.97796, 255, 85, 140)});
+		screen_presence.insert({"Story", make_PresenceScreen(0.23857, 0.97796, 255, 133, 41)});
+		screen_presence.insert({"Home", make_PresenceScreen(0.31525, 0.97796, 33, 162, 247)});
+		screen_presence.insert({"Race", make_PresenceScreen(0.34082, 0.97796, 64, 199, 8)});
+		screen_presence.insert({"Gacha", make_PresenceScreen(0.39659, 0.97796, 231, 63, 200)});
+		
 		DiscordEventHandlers handlers;
 		memset(&handlers, 0, sizeof(handlers));
 			
@@ -164,8 +206,8 @@ namespace discord
 		DiscordRichPresence discordPresence;
 		memset(&discordPresence, 0, sizeof(discordPresence));
 		
-		discordPresence.state = "Main Menu";
-		//discordPresence.details = "Ready your umapyois!";
+		discordPresence.details = "Main Menu";
+		discordPresence.state = "Title Screen";
 		discordPresence.startTimestamp = start;
 		discordPresence.largeImageKey = "umaicon";
 		discordPresence.largeImageText = "It's Special Week!";
@@ -177,6 +219,7 @@ namespace discord
 		Discord_ClearPresence();
 		Discord_Shutdown();
 		curl_global_cleanup();
+		running = false;
 	}
 	
 	std::string opponent_list_sig =
@@ -296,8 +339,8 @@ namespace discord
 				
 				DiscordRichPresence discordPresence;
 				memset(&discordPresence, 0, sizeof(discordPresence));
-				discordPresence.state = "Main Menu";
-				// discordPresence.details = "Home";
+				discordPresence.details = "Main Menu";
+				discordPresence.state = "Home";
 				discordPresence.largeImageKey = "umaicon";
 				discordPresence.largeImageText = "It's Special Week!";
 				discordPresence.startTimestamp = start;
@@ -315,8 +358,8 @@ namespace discord
 				// Concert Theater
 				if (data.contains("live_theater_save_info_array"))
 				{
-					discordPresence.state = "Concert Theater";
-					discordPresence.details = "Vibing";
+					discordPresence.details = "Concert Theater";
+					discordPresence.state = "Vibing";
 					should_update = true;
 				}
 				// Claw Machine
@@ -439,6 +482,152 @@ namespace discord
 		catch (...)
 		{
 			std::cout << "Uncaught exception!\n";
+		}
+	}
+	
+	bool similar_color(PresenceColor color, PresenceColor color2)
+	{
+		double diff = 0;
+		diff += abs(color.r - color2.r);
+		diff += abs(color.g - color2.g);
+		diff += abs(color.b - color2.b);
+		return diff < 80;
+	}
+	
+	HWND game_window;
+	
+	BOOL CALLBACK EnumWindowsCallback(HWND hwnd, LPARAM lParam) {
+		char title[256];
+		GetWindowTextA(hwnd, title, sizeof(title));
+
+		std::string query = reinterpret_cast<const char*>(lParam);
+
+		if (std::string(title) == query) {
+			//printf("Found window! %s\n", query.c_str());
+			game_window = hwnd;
+			return FALSE;
+		}
+
+		return TRUE;
+	}
+	
+	HWND find_game_window(std::string query)
+	{
+		if (game_window != nullptr)
+			return game_window;
+		game_window = nullptr;
+		EnumWindows(EnumWindowsCallback, reinterpret_cast<LPARAM>(query.c_str()));
+		return game_window;
+	}
+	
+	std::string current_subscreen = "";
+	
+	// Designed to run on a thread so it better be on one dingus
+	void get_main_menu_screenshot()
+	{
+		// updates every 2 seconds
+		const auto mill = std::chrono::milliseconds(2000);
+		printf("Initializing game screenshot rpc daemon...\n");
+		while (running)
+		{
+			RECT rc;
+			printf("Checking Uma window...\n");
+			game_window = find_game_window(is_steam ? "UmamusumePrettyDerby_Jpn" : "umamusume");
+			if (game_window && !(IsIconic(game_window)))
+			{
+				HDC hdcWindow = GetDC(game_window);
+				
+				RECT rc;
+				GetClientRect(game_window, &rc);
+				
+				// having to create a new bitmap every time
+				// certainly.
+				HDC memDC = CreateCompatibleDC(hdcWindow);
+				int width = rc.right - rc.left;
+				int height = rc.bottom - rc.top;
+				HBITMAP memBM = CreateCompatibleBitmap(hdcWindow, width, height);
+				SelectObject(memDC, memBM);
+				
+				// BitBlt has failed me and I'm not gonna bother trying
+				// to use the Desktop Duplication API
+				// Sorry Windows 7 users
+				PrintWindow(game_window, memDC, PW_CLIENTONLY | PW_RENDERFULLCONTENT);
+				
+				/*
+				if (OpenClipboard(nullptr))
+				{
+					EmptyClipboard();
+					HBITMAP bitmapcopy = (HBITMAP)CopyImage(
+						memBM,             // handle to source
+						IMAGE_BITMAP,        // type of image
+						0, 0, 0                // use original width and height
+					);
+					SetClipboardData(CF_BITMAP, bitmapcopy);
+					CloseClipboard();
+				}
+				*/
+				
+				int count = 0;
+				std::string subscreen = "";
+				
+				for (auto& [subscr, scr] : screen_presence)
+				{
+					int x = scr.x * (rc.right - rc.left);
+					int y = scr.y * (rc.bottom - rc.top);
+					
+					COLORREF color = GetPixel(memDC, x, y);
+					PresenceColor pixel_color = { GetRValue(color), GetGValue(color), GetBValue(color) };
+					PresenceColor visible_color = { 226, 223, 231 };
+					
+					bool tab_enabled = similar_color(pixel_color, scr.color);
+					bool tab_visible = similar_color(pixel_color, visible_color);
+					
+					/*
+					printf("====== SUBSCREEN %s ======\n", subscr.c_str());
+					
+					printf("X: %d\n", x);
+					printf("Y: %d\n", y);
+					
+					printf("Current R: %d\n", pixel_color.r);
+					printf("Current G: %d\n", pixel_color.g);
+					printf("Current B: %d\n", pixel_color.b);
+					
+					printf("Target R: %d\n", scr.color.r);
+					printf("Target G: %d\n", scr.color.g);
+					printf("Target B: %d\n", scr.color.b);
+					*/
+					
+					// Current pixel should be part of the menu
+					if (tab_enabled || tab_visible)
+					{
+						count += 1;
+						if (tab_enabled)
+							subscreen = subscr;
+					}
+					else
+						break;
+				}
+				
+				if (count == 5 && !(subscreen.empty()) && current_subscreen != subscreen)
+				{
+					// set rich presence
+					DiscordRichPresence discordPresence;
+					memset(&discordPresence, 0, sizeof(discordPresence));
+					discordPresence.details = "Main Menu";
+					discordPresence.state = subscreen.c_str();
+					discordPresence.largeImageKey = "umaicon";
+					discordPresence.largeImageText = "It's Special Week!";
+					discordPresence.startTimestamp = start;
+					current_subscreen = subscreen;
+					Discord_UpdatePresence(&discordPresence);
+					printf("Update Rich Presence main menu: %s\n", subscreen.c_str());
+				}
+				
+				DeleteDC(memDC);
+				DeleteObject(memBM);
+				ReleaseDC(game_window, hdcWindow);
+			}
+			std::this_thread::sleep_for(mill);
 		}
 	}
 }

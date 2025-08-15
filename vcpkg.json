@@ -10,7 +10,6 @@
     "fmt",
     "minhook",
     "nlohmann-json",
-    "openssl",
     "sqlitecpp"
   ]
 }

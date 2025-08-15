@@ -15,6 +15,9 @@
 
 using namespace std::literals;
 
+bool is_steam = false;
+HWND uma_window;
+
 namespace
 {
 	void create_debug_console()
@@ -136,6 +139,11 @@ namespace
 		path += L"ative.dll";
 		const auto libnative_module = GetModuleHandle(path.c_str());
 		//printf("libnative.dll at %p\n", libnative_module);
+		uma_window = FindWindow(NULL, is_steam ? L"UmamusumePrettyDerby_Jpn" : L"umamusume");
+		if (uma_window)
+		{
+			printf("Found Umamusume window...\n");
+		}
 		if (libnative_module == nullptr)
 		{
 			return;

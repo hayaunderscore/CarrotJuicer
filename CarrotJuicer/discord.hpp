@@ -7,4 +7,5 @@ namespace discord
 	void init();
 	void deinit();
 	void update_presence_by_data(const std::string& data);
+	void get_main_menu_screenshot();
 }

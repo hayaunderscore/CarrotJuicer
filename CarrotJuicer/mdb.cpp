@@ -8,7 +8,7 @@
 
 #include "config.hpp"
 
-bool is_steam = false;
+extern bool is_steam;
 
 namespace mdb
 {
