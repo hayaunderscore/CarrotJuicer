@@ -29,8 +29,8 @@ find_package(SQLiteCpp CONFIG REQUIRED)
 
 # Compared to the original CarrotJuicer, this doesn't export has a version.dll hijack at all!
 # It's best to use this with Hachimi and not directly as such, as that is detected by anticheat
-add_library(CarrotJuicer MODULE)
+add_library(CarrotJuicer SHARED)
 
 add_subdirectory(CarrotJuicer)
 
-target_link_libraries(CarrotJuicer CURL::libcurl minhook::minhook nlohmann_json::nlohmann_json SQLiteCpp asio::asio ViaHttpLib::via-httplib)
+target_link_libraries(CarrotJuicer PRIVATE -static CURL::libcurl minhook::minhook nlohmann_json::nlohmann_json SQLiteCpp asio::asio ViaHttpLib::via-httplib)
