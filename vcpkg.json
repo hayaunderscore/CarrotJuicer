@@ -4,12 +4,15 @@
   "version": "1.0.0",
   "builtin-baseline": "d30fdf55cfca16e12bc3ad99cbc615997014b61b",
   "dependencies": [
+    "asio",
     "cpp-httplib",
     "curl",
     "discord-rpc",
     "fmt",
     "minhook",
     "nlohmann-json",
-    "sqlitecpp"
+    "sqlitecpp",
+    "via-httplib",
+    "openssl"
   ]
 }

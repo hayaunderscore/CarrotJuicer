@@ -3,7 +3,7 @@
 #include <locale>
 #include <string>
 #include <thread>
-#include <Windows.h>
+#include <windows.h>
 #include <MinHook.h>
 
 #include "config.hpp"
@@ -11,7 +11,9 @@
 #include "responses.hpp"
 #include "notifier.hpp"
 #include "requests.hpp"
+#ifdef DISCORD_RPC_ENABLED
 #include "discord.hpp"
+#endif
 
 using namespace std::literals;
 
@@ -95,8 +97,10 @@ namespace
 		});
 
 		responses::print_response_additional_info(data);
+#ifdef DISCORD_RPC_ENABLED
 		if (config::get().discord_rpc)
 			discord::update_presence_by_data(data);
+#endif
 
 		notifier_thread.join();
 
@@ -156,8 +160,8 @@ namespace
 		{
 			return;
 		}
-		MH_CreateHook(LZ4_decompress_safe_ext_ptr, LZ4_decompress_safe_ext_hook, &LZ4_decompress_safe_ext_orig);
-		MH_EnableHook(LZ4_decompress_safe_ext_ptr);
+		MH_CreateHook((void*)LZ4_decompress_safe_ext_ptr, (void*)LZ4_decompress_safe_ext_hook, &LZ4_decompress_safe_ext_orig);
+		MH_EnableHook((void*)LZ4_decompress_safe_ext_ptr);
 
 		const auto LZ4_compress_default_ext_ptr = GetProcAddress(libnative_module, "LZ4_compress_default_ext");
 		printf("LZ4_compress_default_ext at %p\n", LZ4_compress_default_ext_ptr);
@@ -165,8 +169,8 @@ namespace
 		{
 			return;
 		}
-		MH_CreateHook(LZ4_compress_default_ext_ptr, LZ4_compress_default_ext_hook, &LZ4_compress_default_ext_orig);
-		MH_EnableHook(LZ4_compress_default_ext_ptr);
+		MH_CreateHook((void*)LZ4_compress_default_ext_ptr, (void*)LZ4_compress_default_ext_hook, &LZ4_compress_default_ext_orig);
+		MH_EnableHook((void*)LZ4_compress_default_ext_ptr);
 	}
 
 	void* load_library_w_orig = nullptr;
@@ -180,8 +184,8 @@ namespace
 		{
 			bootstrap_carrot_juicer();
 
-			MH_DisableHook(LoadLibraryW);
-			MH_RemoveHook(LoadLibraryW);
+			MH_DisableHook((void*)LoadLibraryW);
+			MH_RemoveHook((void*)LoadLibraryW);
 
 			return LoadLibraryW(path);
 		}
@@ -202,8 +206,10 @@ void attach()
 	printf("MinHook initialized.\n");
 
 	config::load();
+#ifdef DISCORD_RPC_ENABLED
 	if (config::get().discord_rpc)
 		discord::init();
+#endif
 
 	std::thread(edb::init).detach();
 	std::thread(notifier::init).detach();
@@ -217,8 +223,8 @@ void attach()
 	}
 	else 
 	{
-		MH_CreateHook(LoadLibraryW, load_library_w_hook, &load_library_w_orig);
-		MH_EnableHook(LoadLibraryW);
+		MH_CreateHook((void*)LoadLibraryW, (void*)load_library_w_hook, &load_library_w_orig);
+		MH_EnableHook((void*)LoadLibraryW);
 	}
 }
 
@@ -226,6 +232,8 @@ void detach()
 {
 	MH_DisableHook(MH_ALL_HOOKS);
 	MH_Uninitialize();
+#ifdef DISCORD_RPC_ENABLED
 	if (config::get().discord_rpc)
 		discord::deinit();
+#endif
 }

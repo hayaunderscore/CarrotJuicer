@@ -1,5 +1,5 @@
 #include <string>
-#include <Windows.h>
+#include <windows.h>
 
 extern "C" {
 void* GetFileVersionInfoA_Original = NULL;

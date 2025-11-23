@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <tuple>
-#include <Windows.h>
+#include <windows.h>
 #include <SQLiteCpp/SQLiteCpp.h>
 
 #include "config.hpp"

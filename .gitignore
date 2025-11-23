@@ -363,3 +363,5 @@ FodyWeavers.xsd
 
 vcpkg_installed/
 
+# As of my efforts, cmake builds are now a thing, so ignore the build folder
+build/
