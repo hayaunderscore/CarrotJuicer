@@ -11,8 +11,8 @@
     "fmt",
     "minhook",
     "nlohmann-json",
+    "openssl",
     "sqlitecpp",
-    "via-httplib",
-    "openssl"
+    "via-httplib"
   ]
 }

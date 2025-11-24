@@ -1,10 +1,16 @@
 ﻿#include <codecvt>
+#include <fstream>
 #include <iostream>
 #include <unordered_map>
 #include <vector>
 #include <tuple>
 #include <windows.h>
 #include <SQLiteCpp/SQLiteCpp.h>
+#include <unistd.h>
+
+// Properly find umamusume dir
+#include "vdf_parser.hpp"
+#define UMAMUSUME_APPID 3564400
 
 #include "config.hpp"
 
@@ -33,6 +39,33 @@ namespace mdb
 
 	SQLite::Database* master;
 
+	std::wstring find_umamusume_path(std::wstring path)
+	{
+		// Path is more tricky to get here since it can be anywhere
+		std::wstring libraryvdf = path + L"steamapps\\libraryfolders.vdf";
+		std::ifstream file(utf8_encode(libraryvdf));
+		auto root = tyti::vdf::read(file);
+		file.close();
+		auto base = root.childs["libraryfolders"];
+
+		// Find umamusume dir
+		for (const auto& child : root.childs)
+		{
+			auto& dat = child.second;
+			if (dat->attribs["path"].empty())
+				continue;
+			// Assume this is it...
+			// TODO check for "apps"
+			int res = access((dat->attribs["path"] + "\\steamapps\\common\\UmamusumePrettyDerby_Jpn\\UmamusumePrettyDerby_Jpn.exe").c_str(), R_OK);
+			if (res < 0)
+				continue;
+			printf("%s", (dat->attribs["path"] + "\\steamapps\\common\\UmamusumePrettyDerby_Jpn\\UmamusumePrettyDerby_Jpn_Data\\Persistent\\master\\master.mdb\n").c_str());
+			return utf8_decode(dat->attribs["path"] + "\\steamapps\\common\\UmamusumePrettyDerby_Jpn\\UmamusumePrettyDerby_Jpn_Data\\Persistent\\master\\master.mdb");
+		}
+
+		return L"";
+	}
+
 	void init()
 	{
 		try
@@ -43,16 +76,16 @@ namespace mdb
 			}
 
 			WCHAR buffer[MAX_PATH];
-			const int len = GetEnvironmentVariable(L"USERPROFILE", buffer, MAX_PATH);
+			const int len = is_steam ? GetEnvironmentVariable(L"PROGRAMFILES(x86)", buffer, MAX_PATH) : GetEnvironmentVariable(L"USERPROFILE", buffer, MAX_PATH);
 
-			std::wstring path(buffer, len);
+			std::wstring path(buffer, MAX_PATH);
 			if (is_steam)
-				path += L"\\AppData\\LocalLow\\Cygames\\UmamusumePrettyDerby_Jpn\\master\\master.mdb";
+				path = find_umamusume_path(path + L"\\Steam\\");
 			else
 				path += L"\\AppData\\LocalLow\\Cygames\\umamusume\\master\\master.mdb";
 			master = new SQLite::Database(utf8_encode(path), SQLite::OPEN_READONLY);
 
-			std::cout << "master.mdb opened.\n";
+			printf("master.mdb opened.\n");
 		}
 		catch (const std::exception& e)
 		{
