@@ -31,6 +31,6 @@ find_package(SQLiteCpp CONFIG REQUIRED)
 # It's best to use this with Hachimi and not directly as such, as that is detected by anticheat
 add_library(CarrotJuicer SHARED)
 
-add_subdirectory(CarrotJuicer)
+add_subdirectory(src)
 
 target_link_libraries(CarrotJuicer PRIVATE -static CURL::libcurl minhook::minhook nlohmann_json::nlohmann_json SQLiteCpp asio::asio ViaHttpLib::via-httplib)
