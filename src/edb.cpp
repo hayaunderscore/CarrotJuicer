@@ -4,6 +4,8 @@
 #include <sstream>
 #include <nlohmann/json.hpp>
 
+#include <spdlog/spdlog.h>
+
 using json = nlohmann::json;
 
 
@@ -20,7 +22,7 @@ namespace edb
 		
 		if (!std::filesystem::exists(cjedb_path))
 		{
-			std::cout << "Skipping " << cjedb_path << "\n";
+			spdlog::info("[edb] Skipping loading {}.", cjedb_path);
 			return;
 		}
 
@@ -46,11 +48,11 @@ namespace edb
 				formatted_events_choices[v.at("storyId")] = formatted.str();
 			}
 
-			std::cout << cjedb_path << " opened, read " << formatted_events_choices.size() << " events.\n";
+			spdlog::info("[edb] {} opened, read {} events.", cjedb_path, formatted_events_choices.size());
 		}
 		catch (std::exception& e)
 		{
-			std::cout << "Exception reading " << cjedb_path << ": " << e.what() << "\n";
+			spdlog::info("[edb] Exception reading {}: {}", cjedb_path, e.what());
 		}
 	}
 
@@ -58,7 +60,7 @@ namespace edb
 	{
 		if (const auto search = formatted_events_choices.find(story_id); search != formatted_events_choices.end())
 		{
-			std::cout << search->second;
+			spdlog::info("[choices] {}", search->second);
 		}
 	}
 }

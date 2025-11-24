@@ -1,6 +1,7 @@
 ﻿#include <codecvt>
 #include <fstream>
 #include <iostream>
+#include <spdlog/spdlog.h>
 #include <unordered_map>
 #include <vector>
 #include <tuple>
@@ -85,11 +86,11 @@ namespace mdb
 				path += L"\\AppData\\LocalLow\\Cygames\\umamusume\\master\\master.mdb";
 			master = new SQLite::Database(utf8_encode(path), SQLite::OPEN_READONLY);
 
-			printf("master.mdb opened.\n");
+			spdlog::info("[mdb] master.mdb successfully opened.");
 		}
 		catch (const std::exception& e)
 		{
-			std::cout << "Exception opening master.mdb: " << e.what() << "\n";
+			spdlog::info("[mdb] Exception opening master.mdb: {}", e.what());
 		}
 	}
 
@@ -107,7 +108,7 @@ namespace mdb
 		}
 		catch (std::exception& e)
 		{
-			std::cout << "Exception unloading master.mdb: " << e.what() << "\n";
+			spdlog::info("[mdb] Exception unloading master.mdb: {}", e.what());
 		}
 	}
 
@@ -131,7 +132,7 @@ namespace mdb
 		}
 		catch (std::exception& e)
 		{
-			std::cout << "Exception querying master.mdb: " << e.what() << "\n";
+			spdlog::info("[mdb] Exception querying master.mdb: {}", e.what());
 		}
 		return "";
 	}
@@ -158,7 +159,7 @@ namespace mdb
 		}
 		catch (std::exception& e)
 		{
-			std::cout << "Exception querying master.mdb: " << e.what() << "\n";
+			spdlog::info("[mdb] Exception querying master.mdb: {}", e.what());
 		}
 		return results;
 	}

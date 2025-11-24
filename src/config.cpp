@@ -5,6 +5,8 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 
+#include "spdlog/spdlog.h"
+
 #define CJCONFIG_READ_PROPERTY(field, j, c) if (j.contains(#field)) c.field = j.at(#field)
 
 using json = nlohmann::json;
@@ -31,6 +33,7 @@ namespace config
 		
 		if (!std::filesystem::exists(config_path))
 		{
+			spdlog::info("[config] Skipping loading {}.", config_path);
 			return;
 		}
 
@@ -54,11 +57,11 @@ namespace config
 			CJCONFIG_READ_PROPERTY(climax_print_shop_items, j, config);
 			CJCONFIG_READ_PROPERTY(discord_rpc, j, config);
 
-			std::cout << "Loaded " << config_path << "\n";
+			spdlog::info("[config] Loaded {}.", config_path);
 		}
 		catch (const std::exception& e)
 		{
-			std::cout << "Exception reading cjconfig.json: " << e.what() << "\n";
+			spdlog::info("[config] Exception reading {}: {}", config_path, e.what());
 		}
 	}
 

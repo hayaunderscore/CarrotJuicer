@@ -26,6 +26,19 @@ find_package(ViaHttpLib CONFIG REQUIRED)
 find_package(minhook CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(SQLiteCpp CONFIG REQUIRED)
+# Using DX11 is very taxing on Proton and will stall the game if the log window is focused
+# /shrug
+find_package(OpenGL REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+
+# Compile flags
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif()
+
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 # Compared to the original CarrotJuicer, this doesn't export has a version.dll hijack at all!
 # It's best to use this with Hachimi and not directly as such, as that is detected by anticheat
@@ -33,4 +46,4 @@ add_library(CarrotJuicer SHARED)
 
 add_subdirectory(src)
 
-target_link_libraries(CarrotJuicer PRIVATE -static CURL::libcurl minhook::minhook nlohmann_json::nlohmann_json SQLiteCpp asio::asio ViaHttpLib::via-httplib)
+target_link_libraries(CarrotJuicer PRIVATE -static -ldwmapi OpenGL::GL spdlog::spdlog CURL::libcurl minhook::minhook nlohmann_json::nlohmann_json SQLiteCpp asio::asio ViaHttpLib::via-httplib)

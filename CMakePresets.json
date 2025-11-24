@@ -8,7 +8,8 @@
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
         "CMAKE_C_COMPILER": "x86_64-w64-mingw32-gcc",
-				"CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-g++"
+				"CMAKE_CXX_COMPILER": "x86_64-w64-mingw32-g++",
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
       },
       "environment": {
         "VCPKG_DEFAULT_TRIPLET": "x64-mingw-static",

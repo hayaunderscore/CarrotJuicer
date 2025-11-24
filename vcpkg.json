@@ -11,8 +11,10 @@
     "fmt",
     "minhook",
     "nlohmann-json",
+    "opengl",
     "openssl",
     "sqlitecpp",
-    "via-httplib"
+    "via-httplib",
+    "spdlog"
   ]
 }

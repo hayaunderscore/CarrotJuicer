@@ -1,6 +1,7 @@
 #include <filesystem>
 #include <iostream>
 #include <locale>
+#include <spdlog/spdlog.h>
 #include <string>
 #include <thread>
 #include <windows.h>
@@ -14,6 +15,9 @@
 #ifdef DISCORD_RPC_ENABLED
 #include "discord.hpp"
 #endif
+
+#include "gui/guiwindow.hpp"
+#include "gallop.hpp"
 
 using namespace std::literals;
 
@@ -86,7 +90,7 @@ namespace
 		{
 			const auto out_path = std::string("CarrotJuicer\\").append(current_time()).append("R.msgpack");
 			write_file(out_path, dst, ret);
-			std::cout << "wrote response to " << out_path << "\n";
+			spdlog::info("[msgpack] Wrote response to {}", out_path);
 		}
 
 		const std::string data(dst, ret);
@@ -122,7 +126,7 @@ namespace
 		{
 			const auto out_path = std::string("CarrotJuicer\\").append(current_time()).append("Q.msgpack");
 			write_file(out_path, src, srcSize);
-			std::cout << "wrote request to " << out_path << "\n";
+			spdlog::info("[msgpack] Wrote request to {}", out_path);
 		}
 
 		if (config::get().print_request)
@@ -136,7 +140,7 @@ namespace
 
 	void bootstrap_carrot_juicer()
 	{
-		printf("Bootstraping CarrotJuicer...\n");
+		spdlog::info("[carrotjuicer] Bootstraping CarrotJuicer...");
 
 		std::filesystem::create_directory("CarrotJuicer");
 
@@ -145,17 +149,13 @@ namespace
 		const auto libnative_module = GetModuleHandle(path.c_str());
 		//printf("libnative.dll at %p\n", libnative_module);
 		uma_window = FindWindow(NULL, is_steam ? L"UmamusumePrettyDerby_Jpn" : L"umamusume");
-		if (uma_window)
-		{
-			printf("Found Umamusume window...\n");
-		}
 		if (libnative_module == nullptr)
 		{
 			return;
 		}
 
 		const auto LZ4_decompress_safe_ext_ptr = GetProcAddress(libnative_module, "LZ4_decompress_safe_ext");
-		printf("LZ4_decompress_safe_ext at %p\n", LZ4_decompress_safe_ext_ptr);
+		spdlog::info("[minhook] LZ4_decompress_safe_ext at {}", std::to_string(reinterpret_cast<unsigned long long>(LZ4_decompress_safe_ext_ptr)));
 		if (LZ4_decompress_safe_ext_ptr == nullptr)
 		{
 			return;
@@ -164,21 +164,21 @@ namespace
 		MH_EnableHook((void*)LZ4_decompress_safe_ext_ptr);
 
 		const auto LZ4_compress_default_ext_ptr = GetProcAddress(libnative_module, "LZ4_compress_default_ext");
-		printf("LZ4_compress_default_ext at %p\n", LZ4_compress_default_ext_ptr);
+		spdlog::info("[minhook] LZ4_compress_default_ext at {}", std::to_string(reinterpret_cast<unsigned long long>(LZ4_compress_default_ext_ptr)));
 		if (LZ4_compress_default_ext_ptr == nullptr)
 		{
 			return;
 		}
 		MH_CreateHook((void*)LZ4_compress_default_ext_ptr, (void*)LZ4_compress_default_ext_hook, &LZ4_compress_default_ext_orig);
 		MH_EnableHook((void*)LZ4_compress_default_ext_ptr);
+
+		gallop::init();
 	}
 
 	void* load_library_w_orig = nullptr;
 
 	HMODULE __stdcall load_library_w_hook(const wchar_t* path)
 	{
-		printf("Saw %ls\n", path);
-
 		// GameAssembly.dll code must be loaded and decrypted while loading criware library
 		if (path == L"cri_ware_unity.dll"s)
 		{
@@ -196,14 +196,15 @@ namespace
 
 void attach()
 {
-	create_debug_console();
+	//create_debug_console();
+	std::thread(gui::run).detach();
 
 	if (MH_Initialize() != MH_OK)
 	{
-		printf("Failed to initialize MinHook.\n");
+		spdlog::error("[minhook] Failed to initialize Minhook.");
 		return;
 	}
-	printf("MinHook initialized.\n");
+	spdlog::info("[minhook] Successfully initialized Minhook!");
 
 	config::load();
 #ifdef DISCORD_RPC_ENABLED
@@ -217,7 +218,7 @@ void attach()
 	int auto_bootstrap_delay_ms = config::get().auto_bootstrap_delay_ms;
 	if (auto_bootstrap_delay_ms > 0)
 	{
-		printf("auto_bootstrap_delay_ms requested. We will sleep for %d ms and begin...\n", auto_bootstrap_delay_ms);
+		spdlog::info("[config] auto_bootstrap_delay_ms requested. We will sleep for %d ms and begin...", auto_bootstrap_delay_ms);
 		std::this_thread::sleep_for(std::chrono::milliseconds(auto_bootstrap_delay_ms));
 		bootstrap_carrot_juicer();
 	}
@@ -226,6 +227,7 @@ void attach()
 		MH_CreateHook((void*)LoadLibraryW, (void*)load_library_w_hook, &load_library_w_orig);
 		MH_EnableHook((void*)LoadLibraryW);
 	}
+	
 }
 
 void detach()
