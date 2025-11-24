@@ -2,19 +2,36 @@
 
 Hooks the decryption function in `libnative.dll` of ウマ娘プリティーダービー (Umamusume Pretty Derby), to allow inspecting the packets (and provide some useful information during the game).
 
+Fork of the original [CarrotJuicer](https://github.com/CNA-Bld/CarrotJuicer) by CNA-Bld, migrating the build system to [CMake](https://cmake.org/) and [MinGW-w64](https://www.mingw-w64.org/) for cross-compiling to Windows from other operating systems, as well as some other features.
+
 For Android, refer to [Riru-CarrotJuicer](https://github.com/CNA-Bld/Riru-CarrotJuicer).
+
+## Build
+
+1. Get [CMake](https://cmake.org/) and [MinGW-w64](https://www.mingw-w64.org/). Make sure you are in the MinGW environment when compiling.
+2. Install [vcpkg](https://vcpkg.io/en/getting-started.html). Make sure the environment variable `VCPKG_ROOT` is available and points to the vcpkg folder.
+3. `git clone`
+4. Create the build files using `cmake --preset Build -B build`.
+5. Compile using `cmake --build build`.
+6. A dll file should be available in the build folder. Proceed to [Usage](#usage).
 
 ## Usage
 
-Theoretically this should support "modern" versions of Windows, as long as it is x64. But this is only tested with Windows 10 v21H1.
+Theoretically this should support "modern" versions of Windows (and Proton), as long as it is x64. But this is only tested with Windows 10 v21H1 and Proton versions compatible with Umamusume (GE-Proton 10-12 or Proton-CachyOS).
 
-Please make sure that you have installed the latest Visual C++ 2019 Redistributable, otherwise the game would crash at start up time with no message at all.
+Unfortunately for now you have to compile it yourself. See [Build](#build).
 
-Unfortunately for now you have to compile it yourself. See "Build" section below.
+This fork is meant to be used with [Hachimi(-Edge)](https://hachimi.noccu.art/).
 
-1. Set up DLL redirection for `umamusume.exe`. We are looking for `version_orig.dll` which you should copy from your `System32` folder.
-2. Start the game as usual (i.e., with DMM launcher). The captured packets will be saved into `CarrotJuicer` folder in the game directory.
-3. You can investigate the responses with msgpack tools like `msgpack2json -di 123456789R.msgpack`.
+1. Install Hachimi, setting up DLL redirection if needed.
+2. In the `hachimi` folder (appears once the game is launched with Hachimi atleast once), edit `config.json` and add the path to the CarrotJuicer dll to `load_libraries`.
+```json
+"load_libraries": [
+  "hachimi\\CarrotJuicer.dll"
+],
+```
+3. Start the game as usual (i.e., with DMM launcher/Steam). The captured packets will be saved into `CarrotJuicer` folder in the game directory.
+4. You can investigate the responses with msgpack tools like `msgpack2json -di 123456789R.msgpack`.
 
 [Hakuraku](https://github.com/SSHZ-ORG/hakuraku) has a UI for investigating the captured packets [here](https://hakuraku.sshz.org/#/carrotjuicer).
 
@@ -24,7 +41,7 @@ Starting from v1.2, CarrotJuicer would print extra info that may help users to m
 
 The Releases in this repo would bundle the latest file as of that time, but you may wish to check for updates [here](https://github.com/CNA-Bld/cjedb) from time to time, especially after a new charactor or support card is added.
 
-In addition, CarrotJuicer will attempt to read `master.mdb` directly from the game's data directory (in `%USERPROFILE%\AppData\LocalLow\Cygames\umamusume\master`) with a bundled SQLite engine. (Sorry for the bloating file size, but the game itself takes 4GB anyway, so we are as trivial as some rounding error.) If you somehow moved it, please at least make sure a link is available.
+In addition, CarrotJuicer will attempt to read `master.mdb` directly from the game's data directory (in `%USERPROFILE%\AppData\LocalLow\Cygames\umamusume\master` or the game's `Persistent` folder) with a bundled SQLite engine. (Sorry for the bloating file size, but the game itself takes 4GB anyway, so we are as trivial as some rounding error.) If you somehow moved it, please at least make sure a link is available.
 
 ### `cjconfig.json`
 
@@ -83,12 +100,6 @@ Requests (files ending with `Q.msgpack`) are not actually msgpack. The current o
 * All remaining is a standard msgpack message. This starts at `+0xAA` which is exactly `offset + 4`.
 
 To investigate the content, remove the first 170 bytes and use msgpack tools, like `tail -c+171 123456789Q.msgpack | msgpack2json -d`.
-
-## Build
-
-0. Install [vcpkg](https://vcpkg.io/en/getting-started.html), and make sure to enable VS integration by running `vcpkg integrate install`.
-1. `git clone`
-2. Spin up Visual Studio 2019, and press "Build".
 
 ## Credits
 
